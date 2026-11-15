@@ -19,7 +19,7 @@ The first launch creates a new `runtime/rematch-central-v1.sqlite` and central k
 
 Public or explicitly synthetic study text can go through OpenAI Structured Outputs, model consistency review, and deterministic source/schema checks. Configure `OPENAI_API_KEY` and `OPENAI_MODEL` in local `.env`; neither is exposed in the interface. Patient records, names, contacts and evidence never enter model prompts. Source-grounded briefs use five exact headings and preserve quotations. Missing facts stay missing; unsupported requirements block publication. The prototype deliberately supports a narrow atomic rule grammar rather than guessing at complex protocols.
 
-Four validated synthetic study fixtures work offline, labeled **offline synthetic fixture**, with low, high, unknown and HbA1c reassessment cases. Offline fixtures are not represented as successful live calls. API failures preserve valid cached material and report failure. The completed public NCT03548935 cache is retained as a source example, never a recruiting opportunity.
+Four synthetic study drafts work offline and require explicit research-team publication, labeled **offline synthetic fixture**, with low, high, unknown and HbA1c reassessment cases. Offline fixtures are not represented as successful live calls. API failures preserve valid cached material and report failure. The completed public NCT03548935 cache is retained as a source example, never a recruiting opportunity.
 
 Identity/contact, retained clinical bundles, clinical screening results, discussion notes and introduction snapshots are encrypted with AES-256-GCM and patient/type/schema binding. ReMatch is the trusted processor and can decrypt authorized records centrally. Principal-bound demo API credentials enforce patient, assigned-doctor and named-team access. These local demo controls are not a production login or security certification.
 
@@ -30,3 +30,5 @@ All patients, Epic authorization, risk-routing designations, listing fees, onboa
 The old federation, separate role apps, coordinator release gates, automatic candidate packets, stale screenshots and old walkthroughs have been removed. `PLAN.md` is explicitly historical. The old archive is preserved locally under ignored `artifacts/`, not shipped as the new demo.
 
 For frontend development: `npm run dev --prefix frontend` with the backend running. Vite proxies `/api` to localhost:8000. The normal launcher uses the compiled frontend and runs only FastAPI. Streamlit has been removed.
+
+Study drafts are not screened until a research team publishes them. Connected records include diabetes and hypertension status, medications, HbA1c, eGFR, creatinine, BMI, blood pressure and ALT. Existing age-only study fixtures are moved to drafts on the next backend restart; reconnect records to load the expanded synthetic profile.

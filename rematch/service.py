@@ -64,7 +64,7 @@ class Service:
                                           preferences={'research_matching': False}))
         credit = float(os.getenv('DEMO_ONBOARDING_CREDIT', '5'))
         self.store.put('payment', pid, dict(id=pid, type='onboarding_time_credit', amount=credit, currency='USD',
-                       state='SIMULATED_EARNED', label='Demo time credit — no payment sent'))
+                       state='SIMULATED_EARNED', label='Onboarding time credit — no payment sent'))
         self.audit('onboard', pid, patient=pid)
         return pid
 
@@ -154,31 +154,32 @@ class Service:
             self.audit('source_changed', actor, source=source['id'])
 
     @locked
-    def publish(self, source, spec, owner):
+    def publish(self, source, spec, owner, *, published=True):
         generated = GeneratedStudy.model_validate(spec['generated'])
         errors = validate_generated(generated, source)
         if errors or spec['state'] != 'VALIDATED_FOR_DEMO' or spec['source_hash'] != source['hash']:
             raise RuleError('Study is blocked: ' + '; '.join(errors or spec.get('errors', [])))
         listing_id = source['id'] + ':' + owner
         old = self.store.get('listing', listing_id)
-        revision = digest({'source': source['hash'], 'spec': spec['generated'], 'state': spec['state']})
+        revision = digest({'source': source['hash'], 'spec': spec['generated'], 'state': spec['state'], 'published': published})
         if old and old['revision'] == revision and not old.get('pending_source_hash'):
             return old
         version = old['version'] + 1 if old else 1
         row = dict(id=listing_id, study_id=source['id'], version=version, revision=revision, owner=owner,
                    pi='Dr Morgan, PI' if owner == 'team-1' else 'Dr Rivera, PI',
-                   site='Demo Research Center' if owner == 'team-1' else 'Second Demo Site',
+                   site='Riverside Research Center' if owner == 'team-1' else 'Oakwood Research Site',
                    contact='research@example.invalid' if owner == 'team-1' else 'second@example.invalid',
-                   status=source['status'], risk=supported_risk(generated, source), risk_evidence=generated.risk_evidence.model_dump() if generated.risk_evidence else None,
-                   title=source['title'], source=source, specification=spec, payment_state='SIMULATED_PAID')
+                   status=source['status'] if published else 'draft', risk=supported_risk(generated, source), risk_evidence=generated.risk_evidence.model_dump() if generated.risk_evidence else None,
+                   title=source['title'], source=source, specification=spec, payment_state='SIMULATED_PAID' if published else 'NOT_CHARGED')
         self.store.put('listing', listing_id, row)
         self.store.put('study_history', listing_id + ':' + str(version), row)
-        self.store.put('payment', listing_id, dict(id=listing_id, type='listing_fee', amount=float(os.getenv('DEMO_LISTING_FEE', '100')),
-                       currency='USD', state='SIMULATED_PAID', label='Demo payment — no charge'))
+        if published:
+            self.store.put('payment', listing_id, dict(id=listing_id, type='listing_fee', amount=float(os.getenv('DEMO_LISTING_FEE', '100')),
+                           currency='USD', state='SIMULATED_PAID', label='Simulated payment — no charge'))
         self.invalidate(listing_id=listing_id, retract=False)
         for patient in self.store.all('patient'):
             self.reassess(patient['id'])
-        self.audit('listing_published', owner, listing=listing_id, version=version)
+        self.audit('listing_published' if published else 'study_draft_saved', owner, listing=listing_id, version=version)
         return row
 
     def brief(self, listing):
@@ -195,7 +196,7 @@ class Service:
     def public_listing(self, listing):
         return {k: listing[k] for k in ['id', 'version', 'title', 'pi', 'site', 'contact', 'status', 'risk']} | {
             'brief': self.brief(listing), 'source_url': listing['source']['url'],
-            'label': 'AI-generated study summary' if listing['specification']['model'] else 'Validated synthetic study summary (offline fixture)',
+            'label': 'AI-generated study summary' if listing['specification']['model'] else 'Prepared study summary',
             'importance': listing['specification']['generated']['importance']}
 
     @locked
@@ -425,7 +426,7 @@ class Service:
             waiting = row['status'] == 'POTENTIAL_MATCH' and listing['risk'] != 'LOW' and (discussion.get('invalid') or discussion.get('outcome') != 'COMPLETED')
             item = {'listing_id': listing['id'], 'status': row['status'], 'waiting_for_doctor': bool(waiting)}
             if waiting:
-                item['message'] = 'Your doctor can help you review this opportunity.' if patient['assigned_pcp'] else 'Arrange a review with your usual doctor; no doctor is assigned in this demo.'
+                item['message'] = 'Your doctor can help you review this opportunity.' if patient['assigned_pcp'] else 'Arrange a review with your usual doctor; no doctor is assigned.'
             else:
                 item['study'] = self.public_listing(listing)
                 item['reasons'] = self.vault.open(pid, 'match', row['payload'])['criteria']

@@ -12,6 +12,9 @@ def run_once():
             response = client.request(method, '/api' + path, json=body)
             response.raise_for_status()
             return response.json()
+        call('POST', '/demo/session', {'actor': 'team-1'})
+        for study in ['SYN-LOW', 'SYN-HIGH', 'SYN-UNKNOWN']:
+            call('POST', '/team/listings', {'source_id': study, 'mode': 'offline'})
         call('POST', '/demo/session', {'actor': 'onboarding'})
         created = call('POST', '/profiles', dict(name='React Demo Check', contact_method='email', contact='react-check@example.invalid', assigned_pcp='doctor-1'))
         pid = created['patient_id']

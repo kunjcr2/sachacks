@@ -9,6 +9,30 @@ def fingerprint(source):
     body = {k: v for k, v in source.items() if k not in {'retrieved_at', 'hash'}}
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
+def synthetic_rules(source_id):
+    def numeric(field, low, high, unit, quote):
+        return dict(id=field, type='inclusion', field=field, operator='between' if high is not None else 'gte',
+                    min=low, max=high, unit=unit, source_text=quote)
+    def boolean(field, quote, excluded=False):
+        return dict(id=field, type='exclusion' if excluded else 'inclusion', field=field, operator='present', source_text=quote)
+    age = numeric('age', 40 if source_id in {'SYN-HIGH', 'SYN-REMATCH'} else 30, 70 if source_id in {'SYN-HIGH', 'SYN-REMATCH'} else 75,
+                  'years', 'Age between 40 and 70 years.' if source_id in {'SYN-HIGH', 'SYN-REMATCH'} else 'Age between 30 and 75 years.')
+    rules = [age, boolean('dx_t2dm', 'Type 2 diabetes is required.')]
+    if source_id == 'SYN-LOW':
+        return rules + [numeric('hba1c', 7, 12.5, '%', 'HbA1c must be between 7% and 12.5%.'),
+                        numeric('bmi', 27, 40, 'kg/m2', 'BMI between 27 and 40 kg/m2.')]
+    if source_id == 'SYN-UNKNOWN':
+        return rules + [numeric('sbp', 130, 160, 'mmHg', 'Systolic blood pressure between 130 and 160 mmHg.'),
+                        numeric('bmi', 25, 40, 'kg/m2', 'BMI between 25 and 40 kg/m2.')]
+    low, high = (7.5, 10) if source_id == 'SYN-REMATCH' else (8.5, 12)
+    return rules + [numeric('hba1c', low, high, '%', f'HbA1c must be between {low:g}% and {high:g}%.'),
+                    numeric('egfr', 45 if source_id == 'SYN-REMATCH' else 60, None, 'mL/min/1.73m2',
+                            'eGFR at least 45 mL/min/1.73m2.' if source_id == 'SYN-REMATCH' else 'eGFR at least 60 mL/min/1.73m2.'),
+                    numeric('bmi', 25, 40, 'kg/m2', 'BMI between 25 and 40 kg/m2.'),
+                    boolean('rx_metformin', 'Active metformin treatment is required.'),
+                    boolean('rx_insulin', 'Current insulin use is excluded.', True),
+                    boolean('pregnant', 'Current pregnancy is excluded.', True)]
+
 def synthetic_source(source_id):
     choices = {
         'SYN-LOW': ('Everyday Balance', 'LOW', 'Possible individual benefit: nutrition knowledge; no guaranteed benefit.', '$10 reimbursement; $20 compensation; no patient costs.'),
@@ -19,18 +43,22 @@ def synthetic_source(source_id):
     if source_id not in choices:
         raise ValueError('Unknown synthetic source')
     title, risk, benefit, compensation = choices[source_id]
-    eligibility = 'Age between 18 and 75 years.'
-    if source_id == 'SYN-REMATCH':
-        eligibility += '\nHbA1c must be between 7.5% and 10%.'
+    eligibility = '\n'.join(rule['source_text'] for rule in synthetic_rules(source_id))
+    purposes = {
+        'SYN-LOW': 'Understand how nutrition education supports daily routines in adults with type 2 diabetes.',
+        'SYN-HIGH': 'Evaluate an investigational add-on treatment in adults with type 2 diabetes taking metformin.',
+        'SYN-UNKNOWN': 'Study the relationship between blood pressure, metabolic health and daily activity in type 2 diabetes.',
+        'SYN-REMATCH': 'Study glucose management in adults with type 2 diabetes whose HbA1c is between 7.5% and 10%.',
+    }
     docs = {
         'registry:eligibility': eligibility,
-        'synthetic:purpose': f'This fictional study explores {title.lower()}.',
+        'synthetic:purpose': purposes[source_id],
         'synthetic:participation': 'One 30-minute research visit and one questionnaire.',
         'synthetic:importance': 'Research importance: learning about patient experiences.',
     }
     if risk != 'UNKNOWN':
-        docs['synthetic:risks'] = ('Synthetic fixture designation: LOW risk for demo routing. Questionnaire discomfort is possible.'
-                                  if risk == 'LOW' else 'Synthetic fixture designation: HIGH risk for demo routing. Investigational treatment side effects and uncertainties require discussion.')
+        docs['synthetic:risks'] = ('LOW risk designation in this synthetic protocol. Questionnaire discomfort is possible.'
+                                  if risk == 'LOW' else 'HIGH risk designation in this synthetic protocol. Investigational treatment side effects and uncertainties require discussion.')
     if benefit:
         docs['synthetic:benefits'] = benefit
     if compensation:

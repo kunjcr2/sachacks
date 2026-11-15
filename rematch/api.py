@@ -152,7 +152,7 @@ def create_app(service=None, auth=None):
 
     @routes.get('/team/listings')
     def listings(actor=Depends(team)):
-        return [row | service.public_listing(row) | {'receipt': service.store.get('payment', row['id'])}
+        return [row | service.public_listing(row) | {'receipt': service.store.get('payment', row['id']) if row['status'] != 'draft' else None}
                 for row in service.store.all('listing') if row['owner'] == actor]
 
     @routes.get('/team/sources')

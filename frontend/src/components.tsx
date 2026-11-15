@@ -6,7 +6,8 @@ export const FeedbackContext = createContext('')
 
 export const date = (value?: string) => value ? new Date(value.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not available'
 export const initials = (name = '') => name.split(' ').map(s => s[0]).slice(0, 2).join('')
-export const fieldName = (key: string) => ({ age: 'Age', hba1c: 'HbA1c', egfr: 'Kidney function (eGFR)', bmi: 'Body mass index' }[key] || key.replaceAll('_', ' '))
+export const fieldName = (key: string) => ({ age: 'Age', hba1c: 'HbA1c', egfr: 'Kidney function (eGFR)', bmi: 'Body mass index', creatinine: 'Creatinine', alt: 'ALT', sbp: 'Systolic blood pressure', dbp: 'Diastolic blood pressure', dx_t2dm: 'Type 2 diabetes', dx_htn: 'Hypertension', dx_ckd: 'Chronic kidney disease', dx_hf: 'Heart failure', pregnant: 'Pregnancy', rx_metformin: 'Metformin', rx_insulin: 'Insulin', rx_sglt2i: 'SGLT2 inhibitor', rx_glp1ra: 'GLP-1 receptor agonist' }[key] || key.replaceAll('_', ' '))
+export const factValue = (field: string, value: string | number | boolean) => typeof value === 'boolean' ? field.startsWith('rx_') ? value ? 'Taking' : 'Not taking' : value ? 'Present' : 'Not present' : String(value)
 export const stateName = (value: string) => ({ SHARED: 'Introduction sent', ACKNOWLEDGED: 'Research team acknowledged', NEED_INFO: 'More information requested', SCREENING_INVITED: 'Invited to formal screening', CLOSED: 'Closed', WITHDRAWN: 'Withdrawn', NOT_REPORTED: 'Enrollment not reported', SIMULATED_ENROLLED: 'Simulated enrollment recorded', PENDING: 'Discussion needed', COMPLETED: 'Discussion completed', DEFERRED: 'Deferred for now' }[value] || value.toLowerCase().replaceAll('_', ' '))
 
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: string }) {
@@ -36,7 +37,7 @@ export function Modal({ title, eyebrow, children, onClose, wide = false }: { tit
 export function Brief({ study }: { study: Study }) {
   return <><div className="brief">{study.brief.map((line, i) => <section key={line.heading}><span className="brief-number">{String(i + 1).padStart(2, '0')}</span><div><h4>{line.heading}</h4><p>{line.text}</p></div></section>)}</div>
     {study.importance && <div className="research-note"><Info size={16} /><p>{study.importance.quote}</p></div>}
-    <p className="fine-print">{study.label}. Automated demo validation; formal eligibility is determined by the research team.</p>
+    <p className="fine-print">{study.label}. The research team confirms formal eligibility.</p>
     {study.source_url?.startsWith('https://') && <a className="text-button" href={study.source_url} target="_blank" rel="noreferrer">Read the original study source <ArrowUpRight size={15} /></a>}
   </>
 }
@@ -44,7 +45,7 @@ export function Reasons({ reasons }: { reasons: Reason[] }) {
   return <div className="reasons">{reasons.map(reason => <div className="reason" key={reason.criterion_id}>
     {reason.status === 'MET' ? <CheckCircle2 size={17} className="green" /> : <Info size={17} className={reason.status === 'NOT_MET' ? 'rust' : 'muted'} />}
     <div><strong>{fieldName(reason.criterion_id)}</strong><span>{reason.explanation}</span></div>
-    {reason.patient_value !== null && reason.patient_value !== undefined && <span className="reason-value">{String(reason.patient_value)} {reason.patient_unit}</span>}
+    {reason.patient_value !== null && reason.patient_value !== undefined && <span className="reason-value">{factValue(reason.criterion_id, reason.patient_value)} {reason.patient_unit}</span>}
   </div>)}</div>
 }
 export function PrivacyNote({ children }: { children: ReactNode }) {
