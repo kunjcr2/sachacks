@@ -5,7 +5,7 @@ from rematch.common.schemas import Criterion, FieldFact
 from rematch.clinic.matching.evaluators import evaluate
 from rematch.clinic.matching.engine import match
 from rematch.clinic.matching.snapshot import PatientSnapshot
-from scripts.build_trial_fixtures import build_trials
+from tests.engine_fixtures import build_trials
 
 
 def fact(key="hba1c", value=9.1, age=0, unit="%", method="HPLC"):

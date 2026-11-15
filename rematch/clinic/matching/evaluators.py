@@ -29,7 +29,7 @@ def compare(value, c: Criterion) -> bool:
 def evaluate(c: Criterion, fact: FieldFact | None, today: date) -> CriterionResult:
     registry = FIELDS.get(c.field)
     result = dict(criterion_id=c.id, status="UNKNOWN", reason="MISSING",
-                  reuse_class="MISSING", explanation="No clinic-verified fact is available.")
+                  reuse_class="MISSING", explanation="No authorized clinical fact is available.")
     if not registry:
         return CriterionResult(**(result | {"reason": "UNMAPPED", "explanation": "Manual review: unsupported clinical concept."}))
     if fact is None:

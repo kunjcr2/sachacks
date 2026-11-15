@@ -1,3 +1,5 @@
+> HISTORICAL / SUPERSEDED. This is the pre-pivot plan. CHANGES.md is the product authority; README.md and DEMO.md describe the implemented central architecture. No old workflow is active.
+
 # ReMatch — Build Plan (SacHacks submission)
 
 > **Discover. Reassess. Re-engage. Retain.**

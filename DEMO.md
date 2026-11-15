@@ -1,34 +1,33 @@
-# ReMatch — setup and judges' demo
-
-**On this computer, everything is installed.** From PowerShell in this folder:
+# Run the ReMatch demo
 
 ```powershell
+python scripts/setup.py
 .\.venv\Scripts\python.exe scripts/run_demo.py --reset
 ```
 
-Keep that terminal open. Open [Clinic](http://localhost:8501), [Sponsor](http://localhost:8502), and [Patient](http://localhost:8503). No API key or internet is needed for the core demo. All patients and matching protocols are fictional.
+One URL: **http://localhost:8000**. The same FastAPI process serves the UI and API. Stop the old launcher first; reset refuses to proceed while any previous demo port is active. `--reset` deliberately reseeds only the new central schema. Omitting it preserves central state. Ctrl+C closes the owned backend and UI processes.
 
-**Fresh computer:** install Python 3.11+ (standard python.org build) or [uv](https://docs.astral.sh/uv/getting-started/installation/). Run `python scripts/setup.py` (or `uv sync --locked --python 3.12`), then the command above. On macOS/Linux use `.venv/bin/python`.
+1. In **Study team**, use team-1. Fetch/cache SYN-LOW and choose **Offline synthetic fixture**, then validate/list. The existing seeded listing is reused idempotently. Show the **Demo payment — no charge** receipt, source quotations, validation metadata and five-line brief. Optional: choose live public-text LLM generation with the local server key. A failed API call is a failure, never a fixture disguised as live output.
+2. In **My studies**, choose patient-1 (Alex Demo), or create a new fake profile without a clinic invitation. Point out the separate earned demo time credit. Declining screening remains a valid choice.
+3. Allow research matching and simulated record access separately. Open **Connect my records — simulated Epic**, confirm the fake authorization, and import. No real credentials are collected. Retained encrypted records support future screening without another import.
+4. **Everyday Balance**, the supported low-risk fixture, appears directly. Request an introduction to preview the exact packet. The doctor has zero tasks for this listing, regardless of benefit or compensation.
+5. The higher-risk **Treatment Questions** and unknown-risk **Health Conversations** initially show a neutral doctor-review status. In **Doctor review**, cases are grouped under the assigned patient. Complete the Treatment Questions discussion. The doctor neither declares eligibility nor authorizes disclosure.
+6. Return to the same patient. Preview the higher-risk study introduction, inspect the named PI/site, name/contact, relevant screening summary and record/study versions, and explicitly confirm this one disclosure. Patient permission is required even after discussion.
+7. In **Study team**, team-1 sees the authorized packet. Team-2 sees none. Acknowledge, invite to formal screening, then explicitly record a simulated enrollment outcome if desired. An introduction or acknowledgment alone is never enrollment, and no doctor payout exists.
+8. Return to **My studies**. Withdraw an introduction, stop research matching, or delete stored records. Show the in-app retraction and retained earned time credit. Disconnecting records is a separate action that stops future imports.
+9. Optional reassessment: while both permissions are active, import the changed synthetic follow-up under **My data and demo controls**. HbA1c changes from 11.2% to 9.1%, creating a ReNew T2D opportunity. Advancing the persisted demo clock 91 days makes that lab stale; elapsed time alone does not improve a result.
 
-## The 4-minute walkthrough
+Patient-2 has no assigned doctor: supported low-risk opportunities still work; higher/unknown-risk cases remain pending with instructions to arrange review. All fixture risk labels are deliberately declared synthetic routing designations.
 
-1. **Clinic → Overview:** select Sunrise Family Health. “Patients get screened out once, but their records change. ReMatch takes another look locally.”
-2. **Clinic → Review Queue:** default case is **PX-82914 / SYN-0001**. Show HbA1c **11.2%**, the **7.5–10%** requirement, and the watch. Matching uses Python rules, never an LLM.
-3. **Sponsor → Network feasibility:** show the two clinics' aggregate counts. No names or patient rows.
-4. **Clinic:** click **+90 days**. Old facts become stale; time alone does not improve a result. Click **Simulate lab feed**. This supplies HbA1c **9.1%**, eGFR **68**, refreshed BMI and pregnancy assessment. Show the reassessment alert, before/after table and reuse labels in **Review Queue**.
-5. Click **Approve & send de-identified packet**. **Sponsor → Network Inspector:** show the hub's ciphertext. **Candidate inbox:** show the pseudonym, age band and evidence; click **Confirm for clinic follow-up**.
-6. **Clinic:** click **Sync trials now**, then **Outreach & participation → Release opportunity to patient**.
-7. **Patient:** sign in as **PX-82914**, click **Refresh**, then **I'm interested**. **Clinic:** Refresh → **Arrange screening referral**. Return to **Patient → My participation** to show the next step.
-8. Optionally click **Pause or withdraw from research**. Refresh the Sponsor inbox to show retraction. “Patients choose; the clinic controls outreach; investigators decide formal eligibility.”
+## Verification
 
-## Reset, fallback, and testing
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts/run_demo.py --reset --check --no-browser
+# With the replacement backend running:
+.\.venv\Scripts\python.exe scripts/check_demo.py --repeat 2
+```
 
-- **Repeat the hero demo:** Clinic sidebar → **Reset selected clinic → Reset clinic to day zero**, then **Sync trials now**. Previously sent packets are retracted. This preserves other clinics and protocol amendments.
-- **Full clean reset:** Ctrl+C in the terminal, then rerun the launch command with `--reset`. This resets both clinics, protocols, aggregates and referrals.
-- **If a service stops:** Ctrl+C, restart; check `runtime/logs/`. If a port is already in use, close the earlier launcher. Backend API pages require local credentials; use the three app links above.
-- Wait for **All six processes are healthy** before opening the apps. The launcher prints each service as it starts. An **interrupt** message means the terminal or OS interrupted the launcher; a service failure instead shows its exit code and log excerpt.
-- **Backup:** play `artifacts/rematch-backup.webm` in Edge/Chrome. Screenshots are in `docs/screenshots/`.
-- **Tests:** `.\.venv\Scripts\python.exe -m pytest -q`. With the demo running, `scripts/check_demo.py --repeat 3` checks every app page and the full UI flow; it resets fictional Clinic A.
-- **Extra demo:** Sponsor → **Protocol amendment**, verify and publish HbA1c max **11.5%**, then sync Clinic A at day zero. The protocol change itself reveals the hero. Use a full reset before the usual lab-update walkthrough.
+The launcher check verifies the React build and one backend, then stops it. The browser-session API walkthrough creates a new synthetic profile per run and checks onboarding, import, both routing paths, exact disclosure permissions, recipient isolation, withdrawal and deletion. It does not erase existing profiles. Backend tests cover role credentials, encrypted persistence and authenticated ownership, source fidelity, failed model review, unknown-risk fallback, stale/missing facts, version invalidation, repeated delivery, payments and reassessment.
 
-Optional OpenAI extraction is separate from the reliable demo: copy `.env.example` to `.env`, set `OPENAI_API_KEY` and `OPENAI_MODEL` to a Structured Outputs model supporting `temperature=0`, restart, then use **Sponsor → Trials & publication → Extract draft rules**. Only public trial text is sent. Drafts require human review and are never automatically published. No other paid API keys are needed.
+Model tests use an explicit fake client; offline success, validated model-cache reuse and live success are separate execution labels. A real live check requires working credentials/network and may incur a small model API charge. The listing receipt itself never charges money.

@@ -1,18 +1,15 @@
-# Extraction evaluation
+# Source-grounded generation and validation
 
-The default `CuratedExtractor` loads five hand-authored, explicitly synthetic protocols. It does not infer rules from prose. All 20 fixture criteria retain exact source quotations; `tests/test_extraction_sources.py` checks every quotation, publication review gates, ambiguity handling, and cache invalidation.
+The live path uses the configured server-side OPENAI_MODEL with the OpenAI Responses API and Structured Outputs. It sends only allow-listed public registry or explicitly synthetic study sources, never patient data. It extracts criteria and five brief claims, then performs a separate model consistency review. That automated review is not independent clinical certification.
 
-| Check | Result |
-| --- | --- |
-| Synthetic protocols | 5 |
-| Curated criteria | 20 |
-| Verbatim source fidelity | 20/20 |
-| Curated loading fidelity against the fixture fields | 20/20 |
-| LLM precision / recall on unseen protocols | **Not measured** |
-| Human corrections to LLM output | **Not measured** |
+Deterministic checks reject invented quotations/locations, duplicate rules, unregistered fields, unsupported units, invalid bounds/operators, polarity changes, inferred rule modifiers, compound/temporal logic and incomplete clause coverage. Unknown clauses are preserved as unmapped and block publication. The deliberately narrow executable grammar handles simple atomic numeric and boolean statements; complex real protocols will remain blocked rather than silently simplified. Registry demographic restrictions outside the narrative are included in coverage.
 
-The loading checks are fixture-integrity checks, **not evidence of automatic extraction accuracy**. The optional OpenAI adapter is covered with a simulated structured response, including public-text-only input, draft-only output and cache behavior. It has not been evaluated with a paid API call. No generated clinical accuracy or recruitment-impact claim is made.
+Briefs have exactly these headings: Purpose; What participation involves; Main risks and uncertainties; Possible benefits; Costs and compensation. Each factual line is an exact source quotation with location. Missing information is labeled "Not provided in the available study information." Individual benefit is never guaranteed. Research importance remains separate. Risk support does not come from trial phase, observational design, payment or general model knowledge. Missing/conflicting/unsupported low-risk evidence routes UNKNOWN to the doctor.
 
-The cached real example is [NCT03548935](https://clinicaltrials.gov/study/NCT03548935), fetched from the official API. It is completed and is shown as source material only; it is never passed off as an active recruiting protocol. The raw API response, exact eligibility text, retrieval timestamp, source URL and text hash are stored in `data/trials/raw/`.
+Successful validated model output is cached by source hash, model, prompt version and schema version. Reuse revalidates source claims. Source hashes include recruitment status and supplied documents; changes suspend existing listings and invalidate pending actions before regeneration. Only validated material can publish. Closed studies are never actionable.
 
-Any automatic extraction needs a separate annotated reference set and qualified semantic review. Verbatim quotations and a valid JSON schema alone cannot establish that an entire protocol has been represented correctly.
+The offline examples are declared synthetic fixtures with deterministic source-grounded specifications, separately labeled offline_synthetic_fixture. They are not represented as live model output or clinician-verified protocols. Live calls use live_model; successful model-cache reuse uses validated_model_cache. API failures report failure and retain valid cached material.
+
+Tests exercise missing clauses, altered thresholds/operators/fields/units/polarity, false quotes, unsupported logic, invalid locations, failed model review, explicit missing facts, source/version cache keys, public-cache provenance, patient-data prompt exclusion and conservative risk routing. Formal semantic/clinical validation across real protocols remains future work.
+
+Implementation verification on November 15, 2026: offline fixtures and the complete simulated workflow pass. A real configured-key generation attempt reached OpenAI but returned AuthenticationError. No live generation success is claimed; update the key locally to repeat the live check.

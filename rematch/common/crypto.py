@@ -1,22 +1,27 @@
+"""Central AES-GCM vault. Keys never enter SQLite; ownership is authenticated."""
 import base64
 import json
-from nacl.public import PrivateKey,PublicKey,SealedBox
-from rematch.common.config import KEYS
-from rematch.common.schemas import CandidatePacket
+import os
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+class Vault:
+    def __init__(self, key_path):
+        key_path.parent.mkdir(parents=True, exist_ok=True)
+        if not key_path.exists():
+            with key_path.open('xb') as handle:
+                handle.write(AESGCM.generate_key(bit_length=256))
+        self.cipher = AESGCM(key_path.read_bytes())
 
-def sponsor_private_key():
-    path = KEYS/"sponsor-private.key"
-    if not path.exists():
-        KEYS.mkdir(parents=True,exist_ok=True)
-        path.write_bytes(bytes(PrivateKey.generate()))
-    return PrivateKey(path.read_bytes())
+    @staticmethod
+    def aad(owner, kind):
+        return json.dumps(['rematch-central-v1', owner, kind, 1]).encode()
 
+    def seal(self, owner, kind, payload):
+        nonce = os.urandom(12)
+        body = self.cipher.encrypt(nonce, json.dumps(payload).encode(), self.aad(owner, kind))
+        return {'schema_version': 1, 'nonce': base64.b64encode(nonce).decode(), 'ciphertext': base64.b64encode(body).decode()}
 
-def encrypt_packet(packet:CandidatePacket,public_key_b64:str):
-    return base64.b64encode(SealedBox(PublicKey(base64.b64decode(public_key_b64))).encrypt(packet.model_dump_json().encode())).decode()
-
-
-def decrypt_packet(ciphertext_b64:str,private_key:PrivateKey):
-    plain = SealedBox(private_key).decrypt(base64.b64decode(ciphertext_b64))
-    return CandidatePacket.model_validate_json(plain)
+    def open(self, owner, kind, envelope):
+        if envelope['schema_version'] != 1:
+            raise ValueError('Unsupported encrypted schema')
+        return json.loads(self.cipher.decrypt(base64.b64decode(envelope['nonce']), base64.b64decode(envelope['ciphertext']), self.aad(owner, kind)))

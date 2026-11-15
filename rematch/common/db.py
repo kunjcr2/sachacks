@@ -1,4 +1,4 @@
-"""SQLAlchemy JSON repository; one SQLite file per service."""
+"""Central SQLite repository; sensitive bodies are encrypted by the service."""
 import json
 from pathlib import Path
 from threading import RLock
@@ -19,7 +19,6 @@ class Store:
         with self.engine.begin() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL"))
             conn.execute(text("CREATE TABLE IF NOT EXISTS records (kind TEXT NOT NULL, id TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY(kind,id))"))
-            conn.execute(text("CREATE TABLE IF NOT EXISTS patient_identity_vault (clinic_local_patient_id TEXT PRIMARY KEY, key_id TEXT NOT NULL, nonce_b64 TEXT NOT NULL, ciphertext_b64 TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"))
 
     def put(self, kind, key, value):
         with self.lock, self.engine.begin() as conn:
@@ -44,4 +43,3 @@ class Store:
     def clear(self):
         with self.lock, self.engine.begin() as conn:
             conn.execute(text("DELETE FROM records"))
-            conn.execute(text("DELETE FROM patient_identity_vault"))

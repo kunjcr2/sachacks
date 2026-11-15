@@ -6,7 +6,7 @@ from rematch.extraction.ctgov import fetch_trial,trial_preview
 
 
 if __name__=="__main__":
-    p = argparse.ArgumentParser(description="Cache a public trial for offline sponsor review. No patient data is used.")
+    p = argparse.ArgumentParser(description="Cache a public trial for research-team source inspection. No patient data is used.")
     p.add_argument("nct_id",nargs="?",default="NCT03548935")
     p.add_argument("--refresh",action="store_true")
     args = p.parse_args()
