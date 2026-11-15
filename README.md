@@ -15,7 +15,7 @@ Open **http://localhost:8000**. Switch between **My studies**, **Doctor review**
 
 The first launch creates a new `runtime/rematch-central-v1.sqlite` and central keys/credentials in `.keys/`. `--reset` explicitly clears only the new central database after checking the old demo ports are stopped. Existing clinic databases and keys are never migrated or reinterpreted. Stop a previous launcher before starting this version.
 
-[Walkthrough and verification commands](DEMO.md) | [Product specification](CHANGES.md) | [Data and consent boundaries](notes/crypto_threat_model.md) | [Extraction checks and limits](docs/extraction_eval.md)
+[Walkthrough and verification commands](DEMO.md) | [Product specification](CHANGES.md) | [Information flow and safeguards](docs/info_flow.md) | [Data and consent boundaries](notes/crypto_threat_model.md) | [Extraction checks and limits](docs/extraction_eval.md) | [Judging slides](presentation/presentation_main.pdf)
 
 Public or explicitly synthetic study text can go through OpenAI Structured Outputs, model consistency review, and deterministic source/schema checks. Configure `OPENAI_API_KEY` and `OPENAI_MODEL` in local `.env`; neither is exposed in the interface. Patient records, names, contacts and evidence never enter model prompts. Source-grounded briefs use five exact headings and preserve quotations. Missing facts stay missing; unsupported requirements block publication. The prototype deliberately supports a narrow atomic rule grammar rather than guessing at complex protocols.
 

@@ -1,0 +1,259 @@
+% ============================================================
+%  ReMatch — SacHacks judging deck (~5 min, app running beside)
+%  Compile with XeLaTeX or LuaLaTeX (twice, for the frame count).
+%  On Overleaf: Menu > Settings > Compiler > XeLaTeX.
+% ============================================================
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme[nosectionpages]{terminal}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{appendixnumberbeamer}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+
+% ---------- theme settings ----------
+\terminalfootprefix{rematch}
+\terminalwindow{rematch.tex}
+\terminalshell{%
+  \$ open rematch --demo\\
+  > patient matching ............. live\\
+  > doctor discussion ............ gated\\
+  > introduction auth ............ explicit}
+
+\title[ReMatch]{ReMatch}
+\subtitle{Connect once. Match studies. Meet research on your terms.}
+\author{Kunj Shah \and Devarsh Shroff}
+\institute{SacHacks}
+\date{}
+
+\begin{document}
+
+% ---- 01 TITLE ----
+\begin{frame}[plain,noframenumbering]
+  \titlepage
+\end{frame}
+
+% ---- 02 PROBLEM ----
+\begin{frame}{The recruitment gap}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\centering
+{\LARGE\bfseries 80--90\%}\\[4pt]
+{\footnotesize of trials miss their\\original enrollment\\timelines}
+\end{column}
+\begin{column}{0.32\textwidth}
+\centering
+{\LARGE\bfseries 86\%}\\[4pt]
+{\footnotesize of sponsors/CROs rank\\recruitment a top-3\\cause of delay}
+\end{column}
+\begin{column}{0.32\textwidth}
+\centering
+{\LARGE\bfseries +22 pts}\\[4pt]
+{\footnotesize rise in that share\\since 2022\\(64\% $\rightarrow$ 86\%)}
+\end{column}
+\end{columns}
+\vskip14pt
+\begin{pbox}
+\small
+A patient screened out once is rarely looked at again --- and a PCP has no time to scan every chart for studies.
+\end{pbox}
+\src{Figures as supplied by the team; cite original sources before submission. 22 pts = 86 $-$ 64.}
+\end{frame}
+
+% ---- 03 PITCH ----
+\begin{frame}{One-slide pitch}
+\begin{tbox}{> rematch --explain}
+\small
+\begin{enumerate}
+\item Patient connects records once (simulated Epic)
+\item Deterministic matching finds what may fit
+\item Doctor only when risk needs a conversation
+\item Patient authorizes each introduction --- exact packet
+\end{enumerate}
+\end{tbox}
+\vskip10pt
+\centering
+\inv{Screening support}\quad not eligibility\quad //\quad
+\inv{Patient chooses}\quad not clinic push
+\end{frame}
+
+% ---- 04 PLATFORM ----
+\begin{frame}{What each person gets}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Patient}
+\small
+\begin{itemize}
+\item Opt in; keep control
+\item See what may fit
+\item Preview before share
+\end{itemize}
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Usual doctor}
+\small
+\begin{itemize}
+\item Only high / unknown risk
+\item Short study brief
+\item Discussion --- not eligibility
+\end{itemize}
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Research team}
+\small
+\begin{itemize}
+\item List a study once
+\item No candidate browsing
+\item Packet only after auth
+\end{itemize}
+\end{tbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---- 05 DEMO: SETUP (app live) ----
+\begin{frame}{Live: study setup → PCP path}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Happening}
+\small
+Team lists a higher-risk study. Rules + brief from public text. Route = \alert{HIGH}.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Why helpful}
+\small
+Matching runs without pulling the PCP into every import.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Resistance gone}
+\small
+No clinic invitation gate. No pre-auth candidate list for the team.
+\end{tbox}
+\end{column}
+\end{columns}
+\vskip12pt
+\centering\small\texttt{\$ switch → Study team · list SYN-HIGH}\,\terminalcursor
+\end{frame}
+
+% ---- 06 DEMO: DOCTOR ----
+\begin{frame}{Live: doctor discussion}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Happening}
+\small
+PCP sees a focused queue: five-line brief, match reasons, mark discussion done.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Why helpful}
+\small
+Minutes of context --- not chart archaeology or trial criteria rewriting.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Resistance gone}
+\small
+Doctor does \alert{not} declare eligibility or authorize disclosure.
+\end{tbox}
+\end{column}
+\end{columns}
+\vskip12pt
+\centering\small\texttt{\$ switch → Doctor review · complete discussion}\,\terminalcursor
+\end{frame}
+
+% ---- 07 DEMO: PATIENT ----
+\begin{frame}{Live: patient view}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Happening}
+\small
+After discussion, the opportunity unlocks. Low-risk studies never waited here.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Why helpful}
+\small
+Clear status: explore, wait for doctor, or not a fit --- no sales pitch.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Resistance gone}
+\small
+Patient is not stuck behind a coordinator for every possible match.
+\end{tbox}
+\end{column}
+\end{columns}
+\vskip12pt
+\centering\small\texttt{\$ switch → My studies · open Treatment Questions}\,\terminalcursor
+\end{frame}
+
+% ---- 08 DEMO: AUTHORIZE ----
+\begin{frame}{Live: authorize the release}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Happening}
+\small
+Exact preview: name, contact, screening summary → one named team.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Why helpful}
+\small
+Patient sees \alert{what} leaves before anything leaves.
+\end{tbox}
+\end{column}
+\begin{column}{0.32\textwidth}
+\begin{tbox}{Resistance gone}
+\small
+No silent chart dump. Screening permission $\neq$ introduction.
+\end{tbox}
+\end{column}
+\end{columns}
+\vskip12pt
+\centering\small\texttt{\$ authorize intro · team-1 sees packet · team-2 sees none}\,\terminalcursor
+\end{frame}
+
+% ---- 09 ARCHITECTURE ----
+\begin{frame}{Information flow \& safeguards}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+\begin{tbox}{> flow}
+\footnotesize
+\begin{enumerate}
+\item Public study text $\rightarrow$ LLM rules
+\item Patient grants matching + records
+\item Deterministic match (no LLM on PHI)
+\item LOW $\rightarrow$ patient; HIGH/UNK $\rightarrow$ PCP
+\item Exact preview $\rightarrow$ patient auth
+\item Named team only
+\end{enumerate}
+\end{tbox}
+\end{column}
+\begin{column}{0.45\textwidth}
+\begin{tbox}{> never}
+\footnotesize
+\begin{itemize}
+\item PHI in model prompts
+\item Team browsing candidates
+\item Full chart by default
+\item Eligibility by ReMatch
+\end{itemize}
+\end{tbox}
+\vskip8pt
+\begin{pbox}
+\footnotesize
+AES-GCM at rest · versioned permissions · withdraw / delete
+\end{pbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---- 10 QUESTIONS ----
+\terminalscreen{\$ rematch --questions}{QUESTIONS?}{Kunj Shah \quad//\quad Devarsh Shroff \quad//\quad SacHacks}
+
+\end{document}
