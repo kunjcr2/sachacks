@@ -2,14 +2,13 @@
 from contextlib import asynccontextmanager
 import secrets
 import time
-from urllib.parse import urlsplit
 import hmac
 import json
 import uuid
 from fastapi import FastAPI, APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from rematch.common.config import ROOT, KEYS, initialize_credentials, register_principal
+from rematch.common.config import ROOT, KEYS, ALLOWED_ORIGINS, COOKIE_SECURE, initialize_credentials, register_principal
 from rematch.common.schemas import Onboard, PermissionUpdate, DiscussionUpdate, IntroductionAuthorization, Followup, ListingRequest, ClockAdvance, DemoSession
 from rematch.service import Service, RuleError
 from rematch.seed import seed, offline_spec
@@ -33,10 +32,23 @@ def create_app(service=None, auth=None):
     routes = APIRouter()
     sessions = {}
 
+    @app.middleware('http')
+    async def prevent_private_response_caching(request, call_next):
+        response = await call_next(request)
+        if not request.url.path.startswith('/assets/'):
+            response.headers['Cache-Control'] = 'private, no-store'
+            response.headers['CDN-Cache-Control'] = 'no-store'
+            response.headers['Vercel-CDN-Cache-Control'] = 'no-store'
+            vary = response.headers.get('Vary', '')
+            if 'cookie' not in {item.strip().lower() for item in vary.split(',')}:
+                response.headers['Vary'] = ', '.join(filter(None, [vary, 'Cookie']))
+        return response
+
     def browser_intent(request):
         origin = request.headers.get('origin')
-        if request.headers.get('X-Rematch-Intent') != 'browser' or (origin and urlsplit(origin).netloc != request.headers.get('host')):
-            raise HTTPException(403, 'Same-origin browser action required')
+        allowed = not origin or origin.rstrip('/') in ALLOWED_ORIGINS or origin.rstrip('/') == f"{request.url.scheme}://{request.headers.get('host')}"
+        if request.headers.get('X-Rematch-Intent') != 'browser' or not allowed:
+            raise HTTPException(403, 'Browser origin is not allowed. Configure REMATCH_ALLOWED_ORIGINS with the exact frontend URL.')
 
     def set_session(actor, response):
         now = time.monotonic()
@@ -45,7 +57,7 @@ def create_app(service=None, auth=None):
                 sessions.pop(old, None)
         opaque = secrets.token_urlsafe(32)
         sessions[opaque] = (actor, now + 7200)
-        response.set_cookie('rematch_demo', opaque, httponly=True, samesite='strict', max_age=7200, path='/')
+        response.set_cookie('rematch_demo', opaque, httponly=True, secure=COOKIE_SECURE, samesite='strict', max_age=7200, path='/')
 
     def principal(request: Request, x_api_key: str = Header(default='')):
         if not x_api_key:

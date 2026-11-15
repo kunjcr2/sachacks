@@ -10,6 +10,8 @@ load_dotenv(ROOT / '.env')
 RUNTIME = Path(os.getenv('REMATCH_RUNTIME', str(ROOT / 'runtime')))
 KEYS = Path(os.getenv('REMATCH_KEYS', str(ROOT / '.keys')))
 API_URL = os.getenv('REMATCH_API_URL', 'http://127.0.0.1:8000')
+ALLOWED_ORIGINS = frozenset(origin.strip().rstrip('/') for origin in os.getenv('REMATCH_ALLOWED_ORIGINS', '').split(',') if origin.strip())
+COOKIE_SECURE = os.getenv('REMATCH_COOKIE_SECURE', 'false').lower() in {'true', '1', 'yes'}
 DISCLAIMER = 'Synthetic screening support only. The study investigator determines formal eligibility.'
 _credential_lock = RLock()
 
