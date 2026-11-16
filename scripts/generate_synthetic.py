@@ -4,7 +4,7 @@ import socket
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from rematch.common.config import RUNTIME, initialize_credentials
+from rematch.common.config import RUNTIME, initialize_credentials, reset_profile_credentials
 from rematch.service import Service
 from rematch.seed import seed
 
@@ -22,8 +22,8 @@ def initialize(force=False, seed_value=42):
         ensure_stopped()
     service = Service()
     if force:
-        service.store.clear()
-        service.store.put('meta', 'clock', {'today': '2026-11-15'})
+        service.reset_demo()
+        reset_profile_credentials()
     seed(service)
     service.store.engine.dispose()
     print('Ready: central-v1 synthetic database, two fake patient profiles, four study fixtures. Permissions start off.', flush=True)

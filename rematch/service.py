@@ -37,6 +37,21 @@ class Service:
         self.vault = vault or Vault(KEYS / 'central-vault-v1.key')
         if not self.store.get('meta', 'clock'):
             self.store.put('meta', 'clock', {'today': '2026-11-15'})
+        if not self.store.get('meta', 'reset'):
+            self.store.put('meta', 'reset', {'id': uuid.uuid4().hex})
+
+    @locked
+    def reset_demo(self):
+        """Explicitly erase all central demo state and restore unpublished fixtures."""
+        from rematch.common.clock import T0
+        from rematch.seed import seed
+        self.store.clear()
+        self.store.put('meta', 'clock', {'today': T0.isoformat()})
+        self.store.put('meta', 'reset', {'id': uuid.uuid4().hex})
+        seed(self)
+        return {'reset_id': self.store.get('meta', 'reset')['id'],
+                'patients': len(self.store.all('patient')), 'study_drafts': len(self.store.all('listing')),
+                'today': self.today().isoformat()}
 
     def today(self):
         return date.fromisoformat(self.store.get('meta', 'clock')['today'])

@@ -32,3 +32,11 @@ The old federation, separate role apps, coordinator release gates, automatic can
 For frontend development: `npm run dev --prefix frontend` with the backend running. Vite proxies `/api` to localhost:8000. The normal launcher uses the compiled frontend and runs only FastAPI. Streamlit has been removed.
 
 Study drafts are not screened until a research team publishes them. Connected records include diabetes and hypertension status, medications, HbA1c, eGFR, creatinine, BMI, blood pressure and ALT. Existing age-only study fixtures are moved to drafts on the next backend restart; reconnect records to load the expanded synthetic profile.
+
+To clear the current run and start from scratch, run this on the backend machine:
+
+```bash
+python scripts/flush_demo.py
+```
+
+This erases current synthetic application data, invalidates all browser sessions, removes credentials for newly created profiles, resets the clock and restores two patient profiles plus four unpublished study drafts. A running backend resets in place; a stopped backend is reseeded and started without building or opening the frontend. Keep ngrok running and reload the Vercel page afterward. The frontend detects the reset and clears its saved profile selections. Environment settings, server encryption keys and public source/model caches are preserved. Use `--no-start` to reset an offline backend without starting it. An older backend without the reset endpoint must be stopped with Ctrl+C once before running the script.

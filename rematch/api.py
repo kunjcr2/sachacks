@@ -8,7 +8,7 @@ import uuid
 from fastapi import FastAPI, APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from rematch.common.config import ROOT, KEYS, ALLOWED_ORIGINS, COOKIE_SECURE, initialize_credentials, register_principal
+from rematch.common.config import ROOT, KEYS, ALLOWED_ORIGINS, COOKIE_SECURE, DEMO_PRINCIPALS, initialize_credentials, register_principal, reset_profile_credentials
 from rematch.common.schemas import Onboard, PermissionUpdate, DiscussionUpdate, IntroductionAuthorization, Followup, ListingRequest, ClockAdvance, DemoSession
 from rematch.service import Service, RuleError
 from rematch.seed import seed, offline_spec
@@ -91,6 +91,21 @@ def create_app(service=None, auth=None):
     def health():
         return {'status': 'ok', 'architecture': 'central-v1', 'synthetic_only': True}
 
+    @routes.post('/demo/reset')
+    def reset_demo(actor=Depends(principal)):
+        if actor != 'admin':
+            raise HTTPException(403, 'Administrator API credential required to reset the demo')
+        with service.store.lock:
+            result = service.reset_demo()
+            sessions.clear()
+            if auth is None:
+                reset_profile_credentials()
+            else:
+                for name in list(auth):
+                    if name not in DEMO_PRINCIPALS:
+                        auth.pop(name, None)
+        return result | {'sessions_cleared': True}
+
     @routes.post('/demo/session')
     def choose_demo_account(body: DemoSession, request: Request, response: Response):
         browser_intent(request)
@@ -99,11 +114,11 @@ def create_app(service=None, auth=None):
         if body.actor not in fixed and not created_patient:
             raise HTTPException(404, 'Demo account not found')
         set_session(body.actor, response)
-        return {'actor': body.actor, 'simulation': True}
+        return {'actor': body.actor, 'simulation': True, 'reset_id': service.store.get('meta', 'reset')['id']}
 
     @routes.get('/demo/session')
     def current_demo_account(actor=Depends(principal)):
-        return {'actor': actor, 'simulation': True}
+        return {'actor': actor, 'simulation': True, 'reset_id': service.store.get('meta', 'reset')['id']}
 
     @routes.post('/profiles')
     def onboard(body: Onboard, request: Request, response: Response, actor=Depends(principal)):
@@ -182,6 +197,7 @@ def create_app(service=None, auth=None):
 
     @routes.post('/team/listings')
     def listing(body: ListingRequest, actor=Depends(team)):
+        reset_id = service.store.get('meta', 'reset')['id']
         source = service.store.get('source', body.source_id)
         if not source:
             raise HTTPException(404, 'Fetch a public source or choose a synthetic fixture first')
@@ -191,10 +207,13 @@ def create_app(service=None, auth=None):
             # Never return SDK errors: they can contain request headers or credentials.
             service.audit('generation_failed', actor, source=source['id'], error_type=type(exc).__name__)
             raise HTTPException(502, 'Generation failed; no live success was recorded. Existing valid cached material was preserved. Check local model/key/network configuration.')
-        service.store.put('extraction_attempt', source['id'] + ':' + actor, spec)
-        if spec['state'] != 'VALIDATED_FOR_DEMO':
-            return {'state': 'BLOCKED', 'errors': spec['errors'], 'execution': spec['execution']}
-        row = service.publish(source, spec, actor)
+        with service.store.lock:
+            if service.store.get('meta', 'reset')['id'] != reset_id:
+                raise HTTPException(409, 'The workspace was reset while processing this study. Reload before publishing again.')
+            service.store.put('extraction_attempt', source['id'] + ':' + actor, spec)
+            if spec['state'] != 'VALIDATED_FOR_DEMO':
+                return {'state': 'BLOCKED', 'errors': spec['errors'], 'execution': spec['execution']}
+            row = service.publish(source, spec, actor)
         return {'state': 'PUBLISHED', 'listing_id': row['id'], 'execution': spec['execution']}
 
     @routes.get('/team/introductions')

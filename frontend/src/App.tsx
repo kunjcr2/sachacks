@@ -8,6 +8,7 @@ import Team from './Team'
 import type { ClinicalSummary, Discussion, Listing, Profile, TeamIntroduction, Workspace } from './types'
 
 const baseAccounts = [{ id: 'patient-1', name: 'Alex Morgan', detail: 'Assigned usual doctor' }, { id: 'patient-2', name: 'Sam Example', detail: 'No assigned doctor' }]
+type BrowserSession = { actor: string; reset_id?: string }
 export default function App() {
   const [actor, setActor] = useState('')
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -37,7 +38,14 @@ export default function App() {
 
   useEffect(() => {
     let active = true
-    api<{ actor: string }>('/demo/session').catch(() => api<{ actor: string }>('/demo/session', 'POST', { actor: 'patient-1' })).then(result => {
+    api<BrowserSession>('/demo/session').catch(() => api<BrowserSession>('/demo/session', 'POST', { actor: 'patient-1' })).then(result => {
+      if (active && result.reset_id && sessionStorage.getItem('rematch_reset_id') !== result.reset_id) {
+        sessionStorage.removeItem('rematch_created_patients')
+        sessionStorage.removeItem('rematch_patient')
+        sessionStorage.setItem('rematch_reset_id', result.reset_id)
+        setCustomPatients([])
+        setLastTeam('team-1')
+      }
       if (active) { setActor(result.actor); setPage(result.actor.startsWith('doctor-') ? 'review' : result.actor.startsWith('team-') ? 'listings' : 'overview'); if (result.actor.startsWith('patient-')) { setLastPatient(result.actor); sessionStorage.setItem('rematch_patient', result.actor) } }
     }).catch(err => { if (active) { setError(err.message); setLoading(false) } })
     return () => { active = false }
